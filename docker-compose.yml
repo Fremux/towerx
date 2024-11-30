@@ -16,10 +16,13 @@ services:
     restart: always
     depends_on:
       db:
+        condition: service_started
       rabbitmq:
         condition: service_healthy
       minio:
+        condition: service_started
       chromadb:
+        condition: service_started
     env_file:
       - .env
     ports:
