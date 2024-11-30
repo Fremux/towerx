@@ -6,34 +6,28 @@ import {
   Input,
   Text,
   useToast,
-  Spinner,
   useBreakpointValue,
+  Progress,
 } from '@chakra-ui/react'
 import { Close, Upload, Camera } from 'shared/iconpack'
 import { Button, ContainerApp } from 'shared/ui'
 import { postFiles } from 'entities/file/api'
+import { useNavigate } from 'react-router-dom'
 
 const UploadPage = () => {
+  const navigate = useNavigate()
   const isMobile = useBreakpointValue({ base: true, md: false })
   const [files, setFiles] = useState<File[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const cameraInputRef = useRef<HTMLInputElement>(null)
   const toast = useToast()
+  const [progress, setProgress] = useState(0)
 
-  const handleFileSelect = (
-    event: React.ChangeEvent<HTMLInputElement>,
-    source: string
-  ) => {
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const newFiles = event.target.files ? Array.from(event.target.files) : []
     if (newFiles.length > 0) {
       setFiles((prevFiles) => [...prevFiles, ...newFiles])
-      toast({
-        title: `${source === 'camera' ? 'Фотография' : 'Файлы'} добавлены.`,
-        status: 'success',
-        duration: 2000,
-        isClosable: true,
-      })
     }
   }
 
@@ -59,17 +53,21 @@ const UploadPage = () => {
 
     setIsLoading(true)
     try {
-      const response = await postFiles(files)
-      if (response.status === 201) {
-        setFiles([])
-        toast({
-          title: 'Успешно!',
-          description: 'Файлы загружены.',
-          status: 'success',
-          duration: 3000,
-          isClosable: true,
-        })
-      }
+      await postFiles(files, (progressEvent) => {
+        // Используем AxiosProgressEvent
+        const { loaded, total } = progressEvent
+        if (total) {
+          setProgress(Math.round((loaded / total) * 100))
+        }
+      })
+      toast({
+        title: 'Успешно!',
+        description: 'Файлы загружены.',
+        status: 'success',
+        duration: 3000,
+        isClosable: true,
+      })
+      navigate('/home')
     } catch {
       toast({
         title: 'Ошибка при загрузке!',
@@ -80,6 +78,7 @@ const UploadPage = () => {
       })
     } finally {
       setIsLoading(false)
+      setProgress(0)
     }
   }
 
@@ -87,7 +86,7 @@ const UploadPage = () => {
     <ContainerApp>
       <Flex direction="column" w="100%" h="100%">
         <Text fontSize="18px" fontWeight="700" mb="15px">
-          Загрузка данных
+          Загрузка изображений для детекции
         </Text>
         <Flex
           h="100%"
@@ -116,7 +115,7 @@ const UploadPage = () => {
             multiple
             ref={fileInputRef}
             style={{ display: 'none' }}
-            onChange={(e) => handleFileSelect(e, 'file')}
+            onChange={(e) => handleFileSelect(e)}
           />
           <Button
             mt={4}
@@ -150,35 +149,39 @@ const UploadPage = () => {
               capture
               ref={cameraInputRef}
               style={{ display: 'none' }}
-              onChange={(e) => handleFileSelect(e, 'camera')}
+              onChange={(e) => handleFileSelect(e)}
             />
           </Flex>
         )}
 
         {files.length > 0 && (
-          <Flex direction="column" align="center" w="100%" mt="6">
+          <Flex
+            direction="column"
+            align={isMobile ? 'center' : ''}
+            w="100%"
+            mt="6"
+          >
             <Text>Выбранные файлы:</Text>
             {files.map((file, index) => (
-              <Flex key={index} justify="space-between" align="center" w="100%">
+              <Flex key={index} gap="15px" align="center">
                 <Text fontSize="sm" noOfLines={1}>
                   {file.name}
                 </Text>
                 <IconButton
+                  colorScheme="transparent"
                   icon={<Close />}
                   aria-label="Удалить файл"
                   onClick={() => removeFile(index)}
                 />
               </Flex>
             ))}
-            <Button
-              mt="4"
-              bg="blue.500"
-              color="white"
-              onClick={handleSubmit}
-              isDisabled={isLoading}
-            >
-              {isLoading ? <Spinner size="sm" /> : 'Загрузить'}
-            </Button>
+            {isLoading ? (
+              <Progress borderRadius="15px" value={progress} size="sm" mt="4" />
+            ) : (
+              <Button mt="4" color="white" onClick={handleSubmit}>
+                Загрузить
+              </Button>
+            )}
           </Flex>
         )}
       </Flex>
