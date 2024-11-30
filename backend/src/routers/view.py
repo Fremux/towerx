@@ -14,6 +14,7 @@ from os import path as p
 import json
 import tempfile
 import errors
+from settings import settings
 
 router = APIRouter()
 
@@ -104,7 +105,7 @@ async def get_image_by_id(image_id: int,
                     labeling=[ImageLabeling(**labeling) for labeling in image.labeling_data]
                     if image.labeling_data is not None else [],
                     created_at=image.created_at,
-                    original_s3_url=original_s3_url)
+                    original_s3_url=original_s3_url[original_s3_url.find(settings.AWS_BUCKET):])
 
 
 @router.delete("/image/{image_id}/",
