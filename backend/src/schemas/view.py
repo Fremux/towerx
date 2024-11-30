@@ -5,7 +5,7 @@ from schemas.enum import EnumImageStatus
 
 
 class ImageLabeling(BaseModel):
-    object_class: int
+    object_class: str
     x_center: int
     y_center: int
     width: int

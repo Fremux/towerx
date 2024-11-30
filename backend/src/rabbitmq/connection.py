@@ -41,23 +41,18 @@ class RabbitConnection:
         :return: None
         """
         logging.info("Connecting to RabbitMQ")
-        try:
-            self.connection = await connect_robust(
-                host=settings.RABBITMQ_HOST,
-                port=settings.RABBITMQ_PORT,
-                password=settings.RABBITMQ_PASS,
-                login=settings.RABBITMQ_USER,
-            )
-            self.channel = await self.connection.channel(publisher_confirms=False)
-            logging.info("Connected to RabbitMQ")
-            self.exchange = await rabbit_connection.channel.declare_exchange("connect", type=ExchangeType.FANOUT)
-            logging.info(self.exchange)
-            queue = await rabbit_connection.channel.declare_queue("connect", durable=True)
-            await queue.bind(rabbit_connection.exchange)
-        except Exception as e:
-            logging.error("Exception raised")
-            await self._clear()
-            logging.error(e.__dict__)
+        self.connection = await connect_robust(
+            host=settings.RABBITMQ_HOST,
+            port=settings.RABBITMQ_PORT,
+            password=settings.RABBITMQ_PASS,
+            login=settings.RABBITMQ_USER,
+        )
+        self.channel = await self.connection.channel(publisher_confirms=False)
+        logging.info("Connected to RabbitMQ")
+        self.exchange = await rabbit_connection.channel.declare_exchange("connect", type=ExchangeType.FANOUT)
+        logging.info(self.exchange)
+        queue = await rabbit_connection.channel.declare_queue("connect", durable=True)
+        await queue.bind(rabbit_connection.exchange)
 
     async def disconnect(self) -> None:
         """

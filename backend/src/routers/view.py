@@ -76,7 +76,7 @@ async def upload_image(files: List[UploadFile],
             responses=errors.with_errors())
 async def get_all(db: Session = Depends(get_database)) -> List[GetAllImages]:
     """Get all images base info"""
-    images: List[Image] = db.query(Image).all()
+    images: List[Image] = db.query(Image).order_by(Image.created_at.desc()).all()
 
     return [GetAllImages(id=image.id,
                          name=image.name,
@@ -87,13 +87,13 @@ async def get_all(db: Session = Depends(get_database)) -> List[GetAllImages]:
                          if image.preview_s3_path is not None else None) for image in images]
 
 
-@router.get("/image/{photo_id}/",
+@router.get("/image/{image_id}/",
             response_model=GetImage,
             responses=errors.with_errors(errors.image_not_found()))
-async def get_image_by_id(photo_id: int,
+async def get_image_by_id(image_id: int,
                           db: Session = Depends(get_database)) -> GetImage:
     """Get image full info"""
-    image = db.query(Image).filter(Image.id == photo_id).first()
+    image = db.query(Image).filter(Image.id == image_id).first()
     if image is None:
         raise errors.image_not_found()
     original_s3_url = s3_connection.get_url(image.original_s3_path)
@@ -105,3 +105,21 @@ async def get_image_by_id(photo_id: int,
                     if image.labeling_data is not None else [],
                     created_at=image.created_at,
                     original_s3_url=original_s3_url)
+
+
+@router.delete("/image/{image_id}/",
+               status_code=204,
+               responses=errors.with_errors())
+async def delete_image(image_id: int,
+                       db: Session = Depends(get_database)):
+    image = db.query(Image).filter(Image.id == image_id).first()
+    if image is None:
+        raise errors.image_not_found()
+
+    if image.original_s3_path is not None:
+        s3_connection.delete_file(image.original_s3_path)
+    if image.preview_s3_path is not None:
+        s3_connection.delete_file(image.preview_s3_path)
+
+    db.delete(image)
+    db.commit()

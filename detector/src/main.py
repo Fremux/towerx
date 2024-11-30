@@ -1,11 +1,13 @@
-import time
-
 import aio_pika
 import asyncio
 import logging
-from .setting import settings
+
+# from .setting import settings
 from connectors.rabbitmq import rabbitmq
 from connectors.db import with_database
+from schema import DetectorTask
+
+
 logger = logging.getLogger()
 logger.addHandler(logging.StreamHandler())
 logger.setLevel(logging.INFO)
@@ -22,8 +24,8 @@ async def main(loop):
                 documents = []
                 error = ""
                 try:
-                    connector = ConnectTask.model_validate_json(message.body.decode())
-                    logger.info(f"Start process {connector=}")
+                    task = DetectorTask.model_validate_json(message.body.decode())
+                    logger.info(f"Start process {task=}")
                     documents, error = process(connector)
                     logger.info(f"Processed with {documents=},{error=}")
                 except ValueError as e:
