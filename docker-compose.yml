@@ -5,12 +5,16 @@ services:
     build: nginx
     restart: always
     ports:
-      - "80:80"
-      - "443:443"
+      - "28088:28088"
     volumes:
       - ./nginx/dist:/public
+    networks:
+      - towerx
+    depends_on:
+      backend:
+        condition: service_started
 
-  restapi:
+  backend:
     image: base-backend
     build: ./backend
     restart: always
@@ -28,6 +32,8 @@ services:
     ports:
       - "28080:8000"
     entrypoint: ["python3", "main.py"]
+    networks:
+      - towerx
 
   db:
     image: postgres:17.0
@@ -38,6 +44,8 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    networks:
+      - towerx
 
   minio:
     image: minio/minio
@@ -55,6 +63,8 @@ services:
       interval: 1s
       timeout: 1s
       retries: 30
+    networks:
+      - towerx
 
   chromadb:
     image: chromadb/chroma
@@ -65,6 +75,8 @@ services:
       - .env
     volumes:
       - chroma_data:/chroma/chroma
+    networks:
+      - towerx
 
   rabbitmq:
     image: rabbitmq:4-management-alpine
@@ -85,6 +97,8 @@ services:
       interval: 1s
       timeout: 1s
       retries: 30
+    networks:
+      - towerx
 
 volumes:
   minio_data:
@@ -95,3 +109,7 @@ volumes:
     driver: local
   rabbitmq_data:
     driver: local
+
+networks:
+  towerx:
+    external: true
