@@ -15,10 +15,11 @@ services:
     build: ./backend
     restart: always
     depends_on:
-      - db
-      - rabbitmq
-      - minio
-      - chromadb
+      db:
+      rabbitmq:
+        condition: service_healthy
+      minio:
+      chromadb:
     env_file:
       - .env
     ports:
