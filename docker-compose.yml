@@ -1,0 +1,89 @@
+services:
+  nginx:
+    image: base-nginx
+    build: nginx
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/dist:/public
+
+  restapi:
+      image: base-backend
+      build: orvim-backend
+      restart: always
+      depends_on:
+        - db
+      env_file:
+        - .env
+      ports:
+        - "28080:8000"
+      entrypoint: ["python3", "main.py"]
+
+  db:
+    image: postgres:17.0
+    restart: always
+    env_file:
+      - .env
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  minio:
+    image: minio/minio
+    command: server --console-address :9005 /data
+    ports:
+      - '9090:9000'
+      - '9005:9005'
+    env_file:
+      - .env
+    restart: always
+    volumes:
+      -  minio_data:/data
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:9000/minio/health/live" ]
+      interval: 1s
+      timeout: 1s
+      retries: 30
+
+  chromadb:
+    image: chromadb/chroma
+    restart: always
+    ports:
+      - "8001:8001"
+    env_file:
+      - .env
+    volumes:
+      - chroma_data:/chroma/chroma
+
+  rabbitmq:
+    image: rabbitmq:4-management-alpine
+    restart: always
+    environment:
+      - RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS=-rabbit disk_free_limit 2147483648
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_USER}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASS}
+    env_file:
+      - .env
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    ports:
+      - 5672:5672
+      - 15672:15672
+    healthcheck:
+      test: rabbitmq-diagnostics -q status && rabbitmq-diagnostics -q check_local_alarms
+      interval: 1s
+      timeout: 1s
+      retries: 30
+
+volumes:
+  minio_data:
+    driver: local
+  postgres_data:
+    driver: local
+  chroma_data:
+    driver: local
+  rabbitmq_data:
+    driver: local

@@ -1,0 +1,8 @@
+fastapi==0.111.0
+pydantic==2.8.1
+pydantic-settings==2.4.0
+uvicorn==0.30.1
+boto3==1.35.20
+SQLAlchemy==2.0.31
+psycopg2==2.9.9
+aio_pika==9.4.3
