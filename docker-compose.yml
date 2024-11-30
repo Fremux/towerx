@@ -16,6 +16,9 @@ services:
     restart: always
     depends_on:
       - db
+      - rabbitmq
+      - minio
+      - chromadb
     env_file:
       - .env
     ports:
