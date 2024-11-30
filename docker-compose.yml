@@ -11,7 +11,7 @@ services:
     networks:
       - towerx
     depends_on:
-      backend:
+      restapi:
         condition: service_started
 
   restapi:
