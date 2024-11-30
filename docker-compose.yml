@@ -10,16 +10,16 @@ services:
       - ./nginx/dist:/public
 
   restapi:
-      image: base-backend
-      build: orvim-backend
-      restart: always
-      depends_on:
-        - db
-      env_file:
-        - .env
-      ports:
-        - "28080:8000"
-      entrypoint: ["python3", "main.py"]
+    image: base-backend
+    build: ./backend
+    restart: always
+    depends_on:
+      - db
+    env_file:
+      - .env
+    ports:
+      - "28080:8000"
+    entrypoint: ["python3", "main.py"]
 
   db:
     image: postgres:17.0
