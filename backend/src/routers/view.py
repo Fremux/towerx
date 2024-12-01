@@ -120,9 +120,9 @@ async def delete_image(image_id: int,
     if image is None:
         raise errors.image_not_found()
 
-    if image.original_s3_path is not None:
+    if image.s3_path is not None:
         s3_connection.delete_file('original' + image.s3_path)
-    if image.preview_s3_path is not None:
+    if image.s3_path is not None:
         s3_connection.delete_file('preview' + image.s3_path)
 
     db.delete(image)
