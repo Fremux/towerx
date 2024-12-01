@@ -1,6 +1,7 @@
 [
   {
     "url": "https://hb.ru-msk.vkcloud-storage.ru/fits/yolo_v1.pt?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=m3KNiQmw9Pfykv3nfBcHyx%2F20241130%2Fru-msk%2Fs3%2Faws4_request&X-Amz-Date=20241130T214621Z&X-Amz-Expires=2591999&X-Amz-SignedHeaders=host&X-Amz-Signature=23f2b3099d4d933ec7a64f9075632b2e0ef3433b609251eca47c867c7a8c968e",
-    "name": "yolo.pt"
+    "name": "yolo.pt",
+    "type": "yolo"
   }
 ]

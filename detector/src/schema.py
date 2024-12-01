@@ -11,7 +11,7 @@ class Bbox(BaseModel):
     h: float
 
 class ClassifierTask(BaseModel):
-    url: str
+    s3: str
     bboxs: list[Bbox]
 
 

@@ -5,6 +5,7 @@ from db import get_database, Session
 from models.image import Image, ObjectClass, Validate
 from schemas.view import GetImage, GetAllImages, ImageLabeling, GetObjectClass
 from services.archive import unpack_archive
+from services.chroma import delete_from_chroma
 from s3 import s3_connection
 from rabbitmq import rabbit_connection
 from aio_pika import Message, DeliveryMode
@@ -153,3 +154,4 @@ async def delete_object_class(object_class_id: int,
         raise errors.object_class_not_found()
     db.delete(object_class)
     db.commit()
+    delete_from_chroma(object_class_id)

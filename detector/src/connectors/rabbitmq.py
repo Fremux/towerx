@@ -50,10 +50,10 @@ class RabbitConnection:
         )
         self.channel = await self.connection.channel(publisher_confirms=False)
         logging.info("Connected to RabbitMQ")
-        self.exchange = await rabbit_connection.channel.declare_exchange("task_class", type=ExchangeType.FANOUT)
-        queue_to = await rabbit_connection.channel.declare_queue("classifier", durable=True)
-        await queue_to.bind(rabbit_connection.exchange)
-        self.queue = await rabbit_connection.channel.declare_queue("detector", durable=True)
+        self.exchange = await self.channel.declare_exchange("task_class", type=ExchangeType.FANOUT)
+        queue_to = await self.channel.declare_queue("classifier", durable=True)
+        await queue_to.bind(self.exchange)
+        self.queue = await self.channel.declare_queue("detector", durable=True)
 
     async def disconnect(self) -> None:
         """

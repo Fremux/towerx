@@ -6,3 +6,4 @@ boto3==1.35.20
 SQLAlchemy==2.0.31
 psycopg2==2.9.9
 aio_pika==9.4.3
+chromadb==0.5.20

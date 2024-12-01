@@ -33,4 +33,5 @@ class Validate(Base):
 class ObjectClass(Base):
     __tablename__ = "object_class"
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    name: Mapped[str] = mapped_column(nullable=False)
+    name: Mapped[str] = mapped_column(nullable=False, unique=True)
+    colour: Mapped[str] = mapped_column(nullable=True, server_default="#000000")

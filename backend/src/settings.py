@@ -24,5 +24,9 @@ class Settings(BaseSettings):
     RABBITMQ_PASS: str
     RABBITMQ_PORT: int = 5672
 
+    CHROMADB_URL: str = "your-chromadb-url"
+    CHROMADB_PORT: int = 8001
+    CHROMADB_NAME: str = "towers"
+
 
 settings = Settings()

@@ -19,7 +19,8 @@ class Settings(BaseSettings):
     AWS_BUCKET: str
     AWS_REGION: str = "us-east-1"
 
-    model: int = 0
+    MODEL: int = 0
+    WEIGHTS_DIR: str = "../weights"
 
 
 settings = Settings()
