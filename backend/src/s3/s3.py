@@ -71,7 +71,7 @@ class S3:
                                                             Params={"Bucket": settings.AWS_BUCKET, "Key": fileid,
                                                                     "ResponseContentType": mime})
         except botocore.exceptions.ClientError:
-            raise FileNotFoundError("File not found")
+            return None
 
 
 s3_connection = S3()

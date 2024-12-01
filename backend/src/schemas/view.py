@@ -5,12 +5,11 @@ from schemas.enum import EnumImageStatus
 
 
 class ImageLabeling(BaseModel):
-    object_class: str
-    x_center: int
-    y_center: int
-    width: int
-    height: int
-    prob: float
+    label: str
+    x: int
+    y: int
+    w: int
+    h: int
 
 
 class GetAllImages(BaseModel):
