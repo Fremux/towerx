@@ -4,8 +4,7 @@ import logging
 from settings import settings
 from typing import List, Tuple
 
-#chroma_client = None
-chroma_client = chromadb.HttpClient(host=settings.CHROMADB_URL, port=settings.CHROMADB_PORT)
+chroma_client = chromadb.HttpClient(host=settings.CHROMA_HOST_ADDR, port=settings.CHROMA_HOST_PORT)
 
 
 def parse_input_file_class(line: bytes) -> Tuple[str, List[float]]:
