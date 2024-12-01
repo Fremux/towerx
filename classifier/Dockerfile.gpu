@@ -1,0 +1,29 @@
+# Используем образ от NVIDIA с поддержкой CUDA 12.1.0 и Ubuntu 22.04
+# Этот образ нужен для работы с GPU
+FROM nvidia/cuda:12.1.0-devel-ubuntu22.04
+
+# Устанавливаем переменную окружения для предотвращения появления запросов в процессе установки
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Устанавливаем рабочую директорию в контейнере
+WORKDIR /app
+
+# Копируем файл зависимостей в контейнер (requirements.txt) в корень контейнера
+COPY requirements.txt .
+
+# Обновляем список пакетов и устанавливаем Python3 и pip,
+# а также обновляем pip до последней версии
+RUN apt-get update && \
+    apt-get install -y python3 python3-pip && \
+    pip install --upgrade pip
+
+# Устанавливаем все необходимые зависимости, указанные в файле requirements.txt
+RUN pip install -r requirements.txt
+
+# Открываем порт 80 для взаимодействия с внешним миром
+EXPOSE 80
+
+# Копируем основной файл приложения (app.py) в контейнер
+COPY src .
+# Указываем команду для запуска приложения, когда контейнер будет запущен
+CMD ["python3", "classify.py"]
