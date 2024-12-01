@@ -113,7 +113,9 @@ with open(str(WEIGHTS_DIR / "weights.json"), 'r') as file:
 
 model_c = models[MODEL]
 
+
 if model_c['type'] != "yolo" and model_c['type'] != "detr": raise ValueError(f"Model type {model_c['tupe']} doesn't supported")
+
 #settings.WEIGHTS_DIR/weights.json
 
 if not (WEIGHTS_DIR / model_c["name"]).exists(): download_file(model_c['url'], WEIGHTS_DIR, model_c["name"])

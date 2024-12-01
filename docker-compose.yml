@@ -5,9 +5,11 @@ services:
     build: nginx
     restart: always
     ports:
-      - "28088:28088"
+      - "80:80"
+      - "443:443"
     volumes:
       - ./nginx/dist:/public
+    command: ["-c","/nginx/conf/nginx.conf"]
     networks:
       - towerx
     depends_on:
@@ -79,7 +81,7 @@ services:
       - towerx
 
   rabbitmq:
-    image: rabbitmq:4-management-alpine
+    image: rabbitmq:4-management-alpine@sha256:f880f33ee2cc0930f595abcf03f5558d08287cbc513b3987fceb418e213449bc
     restart: always
     environment:
       - RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS=-rabbit disk_free_limit 2147483648
@@ -95,7 +97,7 @@ services:
     healthcheck:
       test: rabbitmq-diagnostics -q status && rabbitmq-diagnostics -q check_local_alarms
       interval: 1s
-      timeout: 1s
+      timeout: 2s
       retries: 30
     networks:
       - towerx

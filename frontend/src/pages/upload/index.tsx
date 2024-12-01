@@ -11,11 +11,16 @@ import {
 } from '@chakra-ui/react'
 import { Close, Upload, Camera } from 'shared/iconpack'
 import { Button, ContainerApp } from 'shared/ui'
-import { postFiles } from 'entities/file/api'
-import { useNavigate } from 'react-router-dom'
+import { postFiles, postClass } from 'entities/file/api'
+import { useNavigate, useParams } from 'react-router-dom'
+
+async function callFunction(name: boolean) {
+  return name ? postClass : postFiles
+}
 
 const UploadPage = () => {
   const navigate = useNavigate()
+  const { name } = useParams()
   const isMobile = useBreakpointValue({ base: true, md: false })
   const [files, setFiles] = useState<File[]>([])
   const [isLoading, setIsLoading] = useState(false)
@@ -50,11 +55,10 @@ const UploadPage = () => {
       })
       return
     }
-
     setIsLoading(true)
     try {
-      await postFiles(files, (progressEvent) => {
-        // Используем AxiosProgressEvent
+      const chosenFunction = await callFunction(!!name)
+      await chosenFunction(files, (progressEvent) => {
         const { loaded, total } = progressEvent
         if (total) {
           setProgress(Math.round((loaded / total) * 100))
@@ -86,7 +90,7 @@ const UploadPage = () => {
     <ContainerApp>
       <Flex direction="column" w="100%" h="100%">
         <Text fontSize="18px" fontWeight="700" mb="15px">
-          Загрузка изображений для детекции
+          {name ? 'Добавление классов' : 'Загрузка изображений для детекции'}
         </Text>
         <Flex
           h="100%"
@@ -101,6 +105,19 @@ const UploadPage = () => {
           w="100%"
           textAlign="center"
           position="relative"
+          onDragOver={(e) => {
+            e.preventDefault()
+            e.stopPropagation()
+            e.dataTransfer.dropEffect = 'copy'
+          }}
+          onDrop={(e) => {
+            e.preventDefault()
+            e.stopPropagation()
+            const newFiles = Array.from(e.dataTransfer.files)
+            if (newFiles.length > 0) {
+              setFiles((prevFiles) => [...prevFiles, ...newFiles])
+            }
+          }}
         >
           <Icon as={Upload} boxSize={12} color="blue.500" />
           <Text fontSize="18px" mt="4">

@@ -1,0 +1,5 @@
+aio-pika
+pydantic
+pydantic-settings
+psycopg2-binary
+sqlalchemy

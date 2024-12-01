@@ -18,8 +18,10 @@ def create_base_object_classes():
                 db.commit()
             except exc.IntegrityError:
                 logging.info(f"{object_class[0]} object class already exists in db")
+                db.rollback()
             except Exception as e:
                 logging.error(f"{object_class[0]} error while creating object class in db")
+                db.rollback()
 
 
 def create_tables():
