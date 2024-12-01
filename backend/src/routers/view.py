@@ -41,7 +41,7 @@ async def upload_image(files: List[UploadFile],
             db.add(image)
             db.commit()
             message_body = {"id": image.id,
-                            "s3_path": s3_path}
+                            "s3": s3_path}
             message = Message(body=json.dumps(message_body).encode(),
                               content_type="application/json",
                               content_encoding="utf-8",
@@ -84,7 +84,7 @@ async def upload_image(files: List[UploadFile],
                         db.add(image)
                         db.commit()
                         message_body = {"id": image.id,
-                                        "s3_path": s3_path}
+                                        "s3": s3_path}
                         message = Message(body=json.dumps(message_body).encode(),
                                           content_type="application/json",
                                           content_encoding="utf-8",
