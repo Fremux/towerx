@@ -67,7 +67,7 @@ def classify(file:BytesIO, bboxes: list[Bbox]) -> list[BBoxResult]:
     for i in tqdm(range(len(bboxes))):
         bbx = bboxes[i]
         cur_img = crop_image(img, bbx.x, bbx.y, bbx.w, bbx.h)
-        inputs = processor(text=["power bridge"], images=[cur_img], return_tensors="pt").to('cuda:0')
+        inputs = processor(text=["power bridge"], images=[cur_img], return_tensors="pt").to(device)
         with torch.no_grad():
             img_embeddgins = model(**inputs).image_embeds
             img_embeddgins = img_embeddgins / img_embeddgins.norm(p=2, dim=-1, keepdim=True)
@@ -77,7 +77,13 @@ def classify(file:BytesIO, bboxes: list[Bbox]) -> list[BBoxResult]:
             n_results=TOP_K
         )
         # print(result)
-        results.append(most_frequent_class(result))
+        results.append(BBoxResult(
+            label=most_frequent_class(result),
+            x=bbx.x,
+            y=bbx.y,
+            w=bbx.w,
+            h=bbx.h
+        ))
 
     return results
 
