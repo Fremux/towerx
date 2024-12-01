@@ -75,7 +75,7 @@ class DETR():
                 float(height_norm)
             ])
         return yolo_annotations
-    
+
 class YOLOW(YOLO):
     def predict(self, img, imgsz=1536):
         result = super().predict(img, imgsz=imgsz)
@@ -92,14 +92,14 @@ class YOLOW(YOLO):
                 box_height = ymax - ymin
                 x_center = xmin + box_width / 2
                 y_center = ymin + box_height / 2
-            
+
                 x_center_norm = x_center / w
                 y_center_norm = y_center / h
                 width_norm = box_width / w
                 height_norm = box_height / h
                 out.append([box.cls.item(), x_center_norm.item(), y_center_norm.item(), width_norm.item(), height_norm.item()])
         return out
-    
+
 def yolo_to_bbox(result):
     return [Bbox(x=bbx[1], y=bbx[2], w=bbx[3], h=bbx[4]) for bbx in result]
 
@@ -128,7 +128,6 @@ def detect(file: BytesIO) -> list[Bbox]:
     img = Image.open(file)
     result = model.predict(img, imgsz=1536)
     return yolo_to_bbox(result)
-    # return [Bbox(x=0.1, y=0.1, w=0.2, h=0.2)]
 
 if __name__ == "__main__":
     img_url = "https://hb.ru-msk.vkcloud-storage.ru/fits/towers.jpg?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=m3KNiQmw9Pfykv3nfBcHyx%2F20241201%2Fru-msk%2Fs3%2Faws4_request&X-Amz-Date=20241201T123155Z&X-Amz-Expires=2591999&X-Amz-SignedHeaders=host&X-Amz-Signature=f2c16d6f24c75e8581c7910a846abf205f7b2b2071d53f847edecff5729a7da8"
@@ -137,4 +136,4 @@ if __name__ == "__main__":
 
     result = detect(img_bytes)
     print(result)
-    
+

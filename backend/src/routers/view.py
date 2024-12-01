@@ -59,11 +59,11 @@ async def upload_image(files: List[UploadFile],
 
                 for unarchived_file in unarchived_files:
                     if unarchived_file[0].endswith((".jpg", ".png", ".jpeg")):
-                        original_s3_path = f"original/{str(uuid4())}_{unarchived_file[0]}"
-                        s3_connection.upload_file(unarchived_file[1].read(), original_s3_path)
+                        s3_path = f"/{str(uuid4())}_{unarchived_file[0]}"
+                        s3_connection.upload_file(unarchived_file[1].read(), "original" + original_s3_path)
                         unarchived_file[1].close()
                         image = Image(name=unarchived_file[0],
-                                      original_s3_path=original_s3_path,
+                                      s3_path=s3_path,
                                       validate_id=validate.id)
                         db.add(image)
                         db.commit()
@@ -88,8 +88,7 @@ async def get_all(db: Session = Depends(get_database)) -> List[GetAllImages]:
                          status=image.status,
                          created_at=image.created_at,
                          object_classes=[],
-                         preview_s3_url=s3_connection.get_url(image.preview_s3_path)
-                         if image.preview_s3_path is not None else None) for image in images]
+                         preview_s3_url=s3_connection.get_url("original" + image.s3_path)) for image in images]
 
 
 @router.get("/image/{image_id}/",
@@ -101,7 +100,7 @@ async def get_image_by_id(image_id: int,
     image = db.query(Image).filter(Image.id == image_id).first()
     if image is None:
         raise errors.image_not_found()
-    original_s3_url = s3_connection.get_url(image.original_s3_path)
+    original_s3_url = s3_connection.get_url("original" + image.s3_path)
 
     return GetImage(id=image.id,
                     name=image.name,

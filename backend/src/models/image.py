@@ -13,8 +13,7 @@ class Image(Base):
     name: Mapped[str] = mapped_column(nullable=False)
     status: Mapped[EnumImageStatus] = mapped_column(apply_image_status,
                                                     server_default=EnumImageStatus.created)
-    original_s3_path: Mapped[str] = mapped_column(nullable=False)
-    preview_s3_path: Mapped[str] = mapped_column(nullable=True)
+    s3_path: Mapped[str] = mapped_column(nullable=False)
     labeling_data: Mapped[List[Dict[str, Any]]] = mapped_column(JSONB, nullable=True)
     true_data: Mapped[List[Dict[str, Any]]] = mapped_column(JSONB, nullable=True)
     created_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), nullable=False,

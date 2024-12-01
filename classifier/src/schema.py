@@ -14,4 +14,11 @@ class ClassifierTask(BaseModel):
     s3: str
     bboxs: list[Bbox]
 
+class BBoxResult(Bbox):
+    label: str
+
+class ClassifierResult(BaseModel):
+    url: str
+    labels: list[BBoxResult]
+
 
