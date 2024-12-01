@@ -6,10 +6,10 @@ from schemas.enum import EnumImageStatus
 
 class ImageLabeling(BaseModel):
     label: str
-    x: int
-    y: int
-    w: int
-    h: int
+    x: float
+    y: float
+    w: float
+    h: float
 
 
 class GetAllImages(BaseModel):
@@ -28,6 +28,7 @@ class GetImage(BaseModel):
     status: EnumImageStatus
     labeling: List[ImageLabeling]
     created_at: datetime
+    preview_s3_url: Optional[str]
 
 
 class GetObjectClass(BaseModel):
@@ -48,6 +49,7 @@ class ValidationMetrics(BaseModel):
     multiclass_f1_score: float
     multiclass_precision: float
     multiclass_recall: float
+    iou: float = 0.0
 
 
 class GetValidationData(BaseModel):

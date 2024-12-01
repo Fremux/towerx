@@ -2,11 +2,11 @@ from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
-    DB_USERNAME: str
-    DB_PASSWORD: str
-    DB_NAME: str
-    DB_ADDR: str = "db"
-    DB_PORT: int = 5432
+    POSTGRES_USER: str
+    POSTGRES_PASSWORD: str
+    POSTGRES_DB: str
+    POSTGRES_ADDR: str = "db"
+    POSTGRES_PORT: int = 5432
 
     RABBITMQ_HOST: str = "localhost"
     RABBITMQ_USER: str = "quest"
@@ -19,8 +19,13 @@ class Settings(BaseSettings):
     AWS_BUCKET: str
     AWS_REGION: str = "us-east-1"
 
-    MODEL: int = 0
     WEIGHTS_DIR: str = "../weights"
+
+    CHROMA_HOST_ADDR: str = "your-chromadb-url"
+    CHROMA_HOST_PORT: int = 8001
+    CHROMA_DB_NAME: str = "towers"
+
+    TOP_K: int = 10
 
 
 settings = Settings()

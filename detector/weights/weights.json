@@ -8,5 +8,10 @@
     "url": "https://hb.ru-msk.vkcloud-storage.ru/fits/rtdetr505_4094.zip?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=m3KNiQmw9Pfykv3nfBcHyx%2F20241201%2Fru-msk%2Fs3%2Faws4_request&X-Amz-Date=20241201T131832Z&X-Amz-Expires=2591999&X-Amz-SignedHeaders=host&X-Amz-Signature=0ee7bfd641b6838e68ec8782518832ae0017573c9c911e07d716596bdabb7ee7",
     "name": "detr.zip",
     "type": "detr"
+  },
+  {
+    "url": "https://hb.ru-msk.vkcloud-storage.ru/fits/experimental_yolo.pt?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=m3KNiQmw9Pfykv3nfBcHyx%2F20241202%2Fru-msk%2Fs3%2Faws4_request&X-Amz-Date=20241202T001215Z&X-Amz-Expires=2591999&X-Amz-SignedHeaders=host&X-Amz-Signature=454e7bca982d0a97748994bb4a38f777467b32e9fb48fae4d1bcfa00511618dd",
+    "name": "experimental_yolo.pt",
+    "type": "yolo"
   }
 ]

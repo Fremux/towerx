@@ -25,13 +25,14 @@ async def main(loop):
                 task = DetectorTask.model_validate_json(message.body.decode())
                 logger.info(f"Start process {task=}")
                 file = BytesIO()
-                s3.download_file(file,task.s3)
-                result = detect(task)
+                s3.download_file(file,"original"+task.s3)
+                result = detect(file)
                 logger.info(f"Result {result=}")
-                rabbitmq.exchange.publish(
+                await rabbitmq.exchange.publish(
                 aio_pika.Message(
                     body=ClassifierTask(
                         s3=task.s3,
+                        id=task.id,
                         bboxs=result,
                     )
                     .model_dump_json()

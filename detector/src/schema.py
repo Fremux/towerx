@@ -12,6 +12,7 @@ class Bbox(BaseModel):
 
 class ClassifierTask(BaseModel):
     s3: str
+    id: int
     bboxs: list[Bbox]
 
 

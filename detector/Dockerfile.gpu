@@ -14,16 +14,17 @@ COPY requirements.txt .
 # Обновляем список пакетов и устанавливаем Python3 и pip,
 # а также обновляем pip до последней версии
 RUN apt-get update && \
-    apt-get install -y python3.10 python3-pip && \
-    pip install --upgrade pip
+    apt-get install -y python3 python3-pip && \
+    pip install --upgrade pip && \
+    apt-get install ffmpeg libsm6 libxext6  -y
 
 # Устанавливаем все необходимые зависимости, указанные в файле requirements.txt
 RUN --mount=type=cache,target=/root/.cache/pip pip install -r requirements.txt
 
-# Открываем порт 80 для взаимодействия с внешним миром
-EXPOSE 80
+WORKDIR /app/src
 
-# Копируем основной файл приложения (app.py) в контейнер
 COPY src .
+
+COPY weights /app/weights
 # Указываем команду для запуска приложения, когда контейнер будет запущен
-CMD ["python3.10", "main.py"]
+CMD ["python3", "main.py"]

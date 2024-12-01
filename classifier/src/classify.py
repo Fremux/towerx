@@ -1,28 +1,22 @@
 from pathlib import Path
 import os
+from settings import settings
 
-WEIGHTS_DIR = Path("../weights")
-CHROMADB_URL = os.getenv("CHROMADB_URL", "62.169.159.176")
-CHROMADB_PORT = os.getenv("CHROMADB_PORT", "28001")
-CHROMADB_NAME = os.getenv("CHROMADB_NAME", "towers")
-TOP_K = os.getenv("TOP_K", 10)
+WEIGHTS_DIR = Path(settings.WEIGHTS_DIR)
 os.environ["HF_HOME"] = str(WEIGHTS_DIR.absolute())
 
+from connectors.chroma import collection
 from io import BytesIO
 from schema import BBoxResult, Bbox
 from transformers import CLIPModel, CLIPProcessor, CLIPConfig
 from PIL import Image
 from tqdm import tqdm
 from collections import Counter
+import uuid
+import torch, requests
 
-import torch, chromadb, requests
-
-# os.environ("TRANSFORMERS_CACHE") = str(WEIGHTS_DIR)
 
 device = torch.device("cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu")
-
-client = chromadb.HttpClient(host=CHROMADB_URL, port=int(CHROMADB_PORT))
-collection = client.get_or_create_collection(CHROMADB_NAME)
 
 model_id = "zer0int/CLIP-GmP-ViT-L-14"
 config = CLIPConfig.from_pretrained(model_id)
@@ -60,6 +54,27 @@ def most_frequent_class(data):
     
     return most_common_class
 
+def add_to_db(file:BytesIO, bboxes: list[BBoxResult]):
+    img = Image.open(file)
+    embs=[]
+    ids=[]
+    metadatas=[]
+    for i in tqdm(range(len(bboxes))):
+        bbx = bboxes[i]
+        cur_img = crop_image(img, bbx.x, bbx.y, bbx.w, bbx.h)
+        inputs = processor(text=["power bridge"], images=[cur_img], return_tensors="pt").to(device)
+        with torch.no_grad():
+            img_embeddgins = model(**inputs).image_embeds
+            img_embeddgins = img_embeddgins / img_embeddgins.norm(p=2, dim=-1, keepdim=True)
+        embs.append(img_embeddgins.cpu().numpy()[0])
+        ids.append(str(uuid.uuid4()))
+        metadatas.append({'class': bbx.label})
+    collection.upsert(
+        embeddings=embs,
+        ids=ids,
+        metadatas=metadatas
+    )
+
 def classify(file:BytesIO, bboxes: list[Bbox]) -> list[BBoxResult]:
     results = []
     img = Image.open(file)
@@ -74,7 +89,7 @@ def classify(file:BytesIO, bboxes: list[Bbox]) -> list[BBoxResult]:
         
         result = collection.query(
             query_embeddings=img_embeddgins.cpu().numpy(),
-            n_results=TOP_K
+            n_results=settings.TOP_K
         )
         # print(result)
         results.append(BBoxResult(

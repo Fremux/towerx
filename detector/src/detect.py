@@ -104,10 +104,10 @@ def yolo_to_bbox(result):
     return [Bbox(x=bbx[1], y=bbx[2], w=bbx[3], h=bbx[4]) for bbx in result]
 
 
-# from .settings import settings
-# print(settings.WEIGHTS_DIR)
-WEIGHTS_DIR = Path("../weights")
-MODEL = 0
+from settings import settings
+print(settings.WEIGHTS_DIR)
+WEIGHTS_DIR = Path(settings.WEIGHTS_DIR)
+MODEL = settings.MODEL
 with open(str(WEIGHTS_DIR / "weights.json"), 'r') as file:
     models = json.load(file)
 

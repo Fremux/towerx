@@ -2,11 +2,11 @@ from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
-    DB_USERNAME: str
-    DB_PASSWORD: str
-    DB_NAME: str
-    DB_ADDR: str = "db"
-    DB_PORT: int = 5432
+    POSTGRES_USER: str
+    POSTGRES_PASSWORD: str
+    POSTGRES_DB: str
+    POSTGRES_ADDR: str = "db"
+    POSTGRES_PORT: int = 5432
 
     RABBITMQ_HOST: str = "localhost"
     RABBITMQ_USER: str = "quest"

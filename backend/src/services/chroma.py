@@ -2,15 +2,16 @@ import chromadb
 import errors
 import logging
 from settings import settings
-from typing import List, Tuple
+from typing import List, Tuple, Set
 
 
-chroma_client = chromadb.HttpClient(host=settings.CHROMA_HOST_ADDR, port=settings.CHROMA_HOST_PORT)
+def create_chroma_connection():
+    return chromadb.HttpClient(host=settings.CHROMA_HOST_ADDR, port=settings.CHROMA_HOST_PORT)
 
 
 def parse_input_file_class(line: str) -> Tuple[str, List[float]]:
     start_quote = line.find('"')
-    end_quote = line.find('"', start_quote + 1)
+    end_quote = line.rfind('"')
     if start_quote == -1 or end_quote == -1:
         logging.error("Can't parse object class name")
         raise errors.unable_to_process_file()
@@ -38,16 +39,15 @@ def delete_from_chroma(cls: str) -> None:
 def insert_class_to_chroma(cls: List[str],
                            input_data: List[List[float]]) -> None:
     collection = chroma_client.get_or_create_collection(name=settings.CHROMA_DB_NAME)
-    collection.add(
-        ids=cls,
-        embeddings=input_data,
-        metadatas=["class"] * len(cls))
+    collection.add(ids=cls,
+                   embeddings=input_data,
+                   metadatas=["class"] * len(cls))
 
 
-def get_all_object_classes() -> Tuple[set, int]:
+def get_all_object_classes() -> Set[str]:
     collection = chroma_client.get_or_create_collection(name=settings.CHROMA_DB_NAME)
     all_metadatas = collection.get(include=["metadatas"]).get('metadatas')
-    classes = set([x.get("class") for x in all_metadatas])
-    num_classes = len(classes)
+    return set([x.get("class") for x in all_metadatas])
 
-    return classes, num_classes
+
+chroma_client = chromadb.HttpClient(host=settings.CHROMA_HOST_ADDR, port=settings.CHROMA_HOST_PORT)

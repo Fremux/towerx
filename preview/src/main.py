@@ -26,6 +26,8 @@ async def main(loop):
                 logger.info("Finished")
             except ValueError as e:
                 logger.error(f"Cant parse PreviewTask with error: {e}")
+            except FileNotFoundError:
+                logger.error(f"NOT FOUND FILE")
             await message.ack()
 
 

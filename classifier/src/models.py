@@ -1,10 +1,24 @@
 from sqlalchemy import TIMESTAMP, func, ForeignKey
 from sqlalchemy.dialects.postgresql import JSONB
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, mapped_column
 from datetime import datetime
 from typing import List, Dict, Any
-from models.base import Base, apply_image_status
-from schemas.enum import EnumImageStatus
+from enum import StrEnum
+from sqlalchemy.dialects.postgresql import ENUM
+from sqlalchemy.orm import declarative_base, relationship
+
+Base = declarative_base()
+
+apply_image_status = ENUM("completed", "in_progress", "error", "created",
+                          name="apply_image_status",
+                          metadata=Base.metadata)
+
+
+class EnumImageStatus(StrEnum):
+    completed = "completed"
+    in_progress = "in_progress"
+    error = "error"
+    created = "created"
 
 
 class Image(Base):

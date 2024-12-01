@@ -20,7 +20,7 @@ from settings import settings
 router = APIRouter()
 
 SUPPORTED_FILE_TYPES = ["image/jpeg", "image/png", "image/jpg"]
-SUPPORTED_ARCHIVE_TYPES = ["application/x-zip-compressed", "application/x-compressed"]
+SUPPORTED_ARCHIVE_TYPES = ["application/x-zip-compressed", "application/x-compressed", "application/zip"]
 SUPPORTED_TXT_FILES = []
 
 
@@ -58,29 +58,26 @@ async def upload_image(files: List[UploadFile],
                 archive_file_path = p.join(tmp, input_file.name)
                 unarchived_files = unpack_archive(archive_file_path, tmp)
                 # Upload and creat tasks for files inside arhcive
-                for unarchived_file in unarchived_files:
-                    if unarchived_file[0].endswith((".jpg", ".png", ".jpeg")):
-                        s3_path = f"/{str(uuid4())}_{unarchived_file[0]}"
-                        s3_connection.upload_file(unarchived_file[1].read(), "original" + s3_path)
-                        unarchived_file[1].close()
-                        image = Image(name=unarchived_file[0],
+                for file_name, file_data in unarchived_files.items():
+                    if file_data["image"] is not None:
+                        s3_path = f"/{str(uuid4())}_{file_data["image"][0].replace('/','_')}"
+                        s3_connection.upload_file(file_data["image"][1].read(), "original" + s3_path)
+                        image = Image(name=file_data["image"][0],
                                       s3_path=s3_path,
                                       validate_id=validate.id)
-                        for annotation_file in unarchived_files:
-                            if (annotation_file[0].endswith(".txt")
-                                    and annotation_file[0].split(".")[0] == unarchived_file[0].split("."[0])):
-                                continue
-                                data = unarchived_file[1].readlines()
-                                true_data = []
-                                for line in data:
-                                    label, params = parse_input_file_class(line.decode("utf-8"))
-                                    labeling_data = {"x": params[0],
-                                                     "y": params[1],
-                                                     "w": params[2],
-                                                     "h": params[3],
-                                                     "label": label}
-                                    true_data.append(labeling_data)
-                                image.true_data = labeling_data
+                        if file_data["txt"] is not None:
+                            file_data["txt"][1].seek(0)
+                            data = file_data["txt"][1].readlines()
+                            true_data = []
+                            for line in data:
+                                label, params = parse_input_file_class(line.decode("utf-8"))
+                                labeling_data = {"x": params[0],
+                                                 "y": params[1],
+                                                 "w": params[2],
+                                                 "h": params[3],
+                                                 "label": label}
+                                true_data.append(labeling_data)
+                            image.true_data = true_data
                         db.add(image)
                         db.commit()
                         message_body = {"id": image.id,
@@ -105,7 +102,7 @@ async def get_all(db: Session = Depends(get_database)) -> List[GetAllImages]:
                               name=image.name,
                               status=image.status,
                               created_at=image.created_at,
-                              object_classes=[],
+                              object_classes=[labeling["label"] for labeling in image.labeling_data] if image.labeling_data is not None else [],
                               preview_s3_url=preview_s3_url[preview_s3_url.find(settings.AWS_BUCKET) - 1:] if preview_s3_url is not None else None)
         result.append(schema)
 
@@ -122,14 +119,15 @@ async def get_image_by_id(image_id: int,
     if image is None:
         raise errors.image_not_found()
     original_s3_url = s3_connection.get_url("original" + image.s3_path)
-
+    preview_s3_url = s3_connection.get_url("preview" + image.s3_path)
     return GetImage(id=image.id,
                     name=image.name,
                     status=image.status,
                     labeling=[ImageLabeling(**labeling) for labeling in image.labeling_data]
                     if image.labeling_data is not None else [],
                     created_at=image.created_at,
-                    original_s3_url=original_s3_url[original_s3_url.find(settings.AWS_BUCKET) - 1:])
+                    original_s3_url=original_s3_url[original_s3_url.find(settings.AWS_BUCKET) - 1:],
+                    preview_s3_url=preview_s3_url[preview_s3_url.find(settings.AWS_BUCKET) - 1:] if preview_s3_url is not None else None)
 
 
 @router.delete("/image/{image_id}/",
@@ -162,25 +160,57 @@ async def get_all_object_classes(db: Session = Depends(get_database)) -> List[Ge
 @router.post("/class/create",
              status_code=201,
              responses=errors.with_errors(errors.object_class_already_exists()))
-async def add_object_class(file: UploadFile,
+async def add_object_class(files: list[UploadFile],
                            db: Session = Depends(get_database)) -> None:
-    class_names, embeddings = [], []
-    for line in file.file.readlines():
-        class_name, embedding = parse_input_file_class(line.decode("utf-8"))
+    if any(file.content_type not in SUPPORTED_ARCHIVE_TYPES for file in files):
+        raise errors.unsupported_file_format()
+    classes = set()
+    for file in files:
+        with (tempfile.TemporaryDirectory(prefix="transform_") as tmp):
+            # Extract data from archive
+            input_file = tempfile.NamedTemporaryFile(mode="wb+", suffix=f"_{file.filename}", dir=tmp)
+            input_file.write(file.file.read())
+            input_file.seek(0)
+            archive_file_path = p.join(tmp, input_file.name)
+            unarchived_files = unpack_archive(archive_file_path, tmp)
+            # Upload and creat tasks for files inside arhcive
+            for file_name, file_data in unarchived_files.items():
+                if file_data["image"] is not None:
+                    s3_path = f"/{str(uuid4())}_{file_data["image"][0].replace('/','_')}"
+                    s3_connection.upload_file(file_data["image"][1].read(), "original" + s3_path)
+                    image = Image(name=file_data["image"][0],
+                                    s3_path=s3_path, is_train=True)
+                    if file_data["txt"] is not None:
+                        file_data["txt"][1].seek(0)
+                        data = file_data["txt"][1].readlines()
+                        true_data = []
+                        for line in data:
+                            label, params = parse_input_file_class(line.decode("utf-8"))
+                            classes.add(label)
+                            labeling_data = {"x": params[0],
+                                                "y": params[1],
+                                                "w": params[2],
+                                                "h": params[3],
+                                                "label": label}
+                            true_data.append(labeling_data)
+                        image.true_data = true_data
+                    db.add(image)
+                    db.commit()
+                    message_body = {"id": image.id,
+                                    "s3": s3_path}
+                    message = Message(body=json.dumps(message_body).encode(),
+                                        content_type="application/json",
+                                        content_encoding="utf-8",
+                                        delivery_mode=DeliveryMode.PERSISTENT)
+                    await rabbit_connection.exchange.publish(message, "")
+
+    for class_name in classes:
         image_name_check = db.query(ObjectClass).filter(ObjectClass.name == class_name).first()
-        class_names.append(class_name)
-        embeddings.append(embeddings)
         if image_name_check is None:
             db.add(ObjectClass(name=class_name))
-            db.flush()
-        else:
-            db.rollback()
-            raise errors.object_class_already_exists()
-    db.commit()
-    insert_class_to_chroma(class_names, embeddings)
+            db.commit()
 
-
-@router.delete("/class/delete",
+@router.delete("/class/{object_class_id}/",
                status_code=204,
                responses=errors.with_errors(errors.object_class_not_found()))
 async def delete_object_class(object_class_id: int,
@@ -188,9 +218,9 @@ async def delete_object_class(object_class_id: int,
     object_class = db.query(ObjectClass).filter(ObjectClass.id == object_class_id).first()
     if object_class is None:
         raise errors.object_class_not_found()
+    delete_from_chroma(object_class.name)
     db.delete(object_class)
     db.commit()
-    delete_from_chroma(object_class_id)
 
 
 @router.get("/validation/all",
@@ -202,16 +232,17 @@ async def get_all_validations(db: Session = Depends(get_database)) -> List[GetVa
                               name=validation.name,
                               created_at=validation.date,
                               is_finished=validation.is_finished,
-                              metrics=ValidationMetrics(map_base=validation.map_base,
-                                                        map_50=validation.map_50,
-                                                        map_75=validation.map_75,
-                                                        map_msall=validation.map_msall,
-                                                        mar_1=validation.mar_1,
-                                                        mar_10=validation.mar_10,
-                                                        mar_100=validation.mar_100,
-                                                        mar_small=validation.mar_small,
-                                                        multiclass_accuracy=validation.multiclass_accuracy,
-                                                        multiclass_f1_score=validation.multiclass_f1_score,
-                                                        multiclass_precision=validation.multiclass_precision,
-                                                        multiclass_recall=validation.multiclass_recall))
+                              metrics=ValidationMetrics(map_base=validation.map_base/validation.count,
+                                                        map_50=validation.map_50/validation.count,
+                                                        map_75=validation.map_75/validation.count,
+                                                        map_msall=validation.map_msall/validation.count,
+                                                        mar_1=validation.mar_1/validation.count,
+                                                        mar_10=validation.mar_10/validation.count,
+                                                        mar_100=validation.mar_100/validation.count,
+                                                        mar_small=validation.mar_small/validation.count,
+                                                        multiclass_accuracy=validation.multiclass_accuracy/validation.count,
+                                                        multiclass_f1_score=validation.multiclass_f1_score/validation.count,
+                                                        multiclass_precision=validation.multiclass_precision/validation.count,
+                                                        multiclass_recall=validation.multiclass_recall/validation.count,
+                                                        iou=validation.iou/validation.count))
             for validation in validations]

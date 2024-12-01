@@ -115,28 +115,59 @@ services:
     networks:
       - towerx
 
-  # detector:
-  #   image: cpu-detector
-  #   build:
-  #     context: detector
-  #     dockerfile: Dockerfile
-  #   restart: always
-  #   depends_on:
-  #     db:
-  #       condition: service_started
-  #     rabbitmq:
-  #       condition: service_healthy
-  #     minio:
-  #       condition: service_started
-  #     chromadb:
-  #       condition: service_started
-  #     restapi:
-  #       condition: service_started
-    # env_file:
-    #   - .env
-    # entrypoint: ["python3", "main.py"]
-    # networks:
-    #   - towerx
+  detector:
+    image: cpu-detector
+    build:
+      context: detector
+      dockerfile: Dockerfile.cpu
+    restart: always
+    depends_on:
+      db:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
+      minio:
+        condition: service_started
+      chromadb:
+        condition: service_started
+      restapi:
+        condition: service_started
+    env_file:
+      - .env
+    environment:
+      - WEIGHTS_DIR=/app/weights
+      - MODEL=2
+    volumes:
+      - ./detector/weights:/app/weights
+    networks:
+      - towerx
+
+  classifier:
+    image: cpu-classifier
+    build:
+      context: classifier
+      dockerfile: Dockerfile.cpu
+    restart: always
+    depends_on:
+      db:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
+      minio:
+        condition: service_started
+      chromadb:
+        condition: service_started
+      restapi:
+        condition: service_started
+    env_file:
+      - .env
+    environment:
+      - WEIGHTS_DIR=/app/weights
+      - MODEL=0
+    volumes:
+      - ./detector/weights:/app/weights
+    networks:
+      - towerx
 
 volumes:
   minio_data:

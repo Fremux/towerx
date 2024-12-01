@@ -11,3 +11,4 @@ torchvision
 sqlalchemy
 chromadb
 supervision
+boto3

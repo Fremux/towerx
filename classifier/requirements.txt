@@ -1,7 +1,6 @@
 transformers
 pillow
 tqdm
-torch
 chromadb
 aio-pika
 pydantic
@@ -10,6 +9,6 @@ psycopg2-binary
 sqlalchemy
 pycocotools
 torchmetrics
-torchvision
 chromadb
 supervision
+boto3

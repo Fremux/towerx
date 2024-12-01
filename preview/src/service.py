@@ -1,6 +1,7 @@
 from PIL import Image
 from connectors.s3 import s3
 import tempfile
+import logging
 
 MAX_SIZE = (150, 150)
 
@@ -55,15 +56,16 @@ def reduce_image_size(input_path,
 def create_preview_image(s3_path: str) -> None:
     with tempfile.TemporaryDirectory(prefix="resize") as tmp:
         # Read file
-        input_file = tempfile.NamedTemporaryFile(mode="wb+", suffix=f"_{s3_path}", dir=tmp)
-        s3.download_file(input_file, s3_path)
+        input_file = tempfile.NamedTemporaryFile(mode="wb+", suffix=s3_path[1:], dir=tmp)
+        original = f"original{s3_path}"
+        s3.download_file(input_file, original)
 
         # Create preview image
-        preview_s3_path = f"preview/{s3_path}"
+        preview_s3_path = f"preview{s3_path}"
         img = Image.open(input_file)
         img.thumbnail(MAX_SIZE, Image.LANCZOS)
         img.save(input_file.name)
-
+        input_file.seek(0)
         # Upload preview image to s3
         s3.upload_file(input_file, preview_s3_path)
         input_file.close()

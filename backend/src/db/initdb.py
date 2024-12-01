@@ -1,24 +1,22 @@
 from db.session import engine, with_database
 from sqlalchemy import exc
+from settings import settings
 import models
 import logging
-from services.chroma import chroma_client
+import chromadb
+
 
 def create_base_object_classes():
     with with_database() as db:
-        # all_metadatas = collection.get(include=["metadatas"]).get('metadatas')
-        # CLASSES = set([x.get("class") for x in all_metadatas])
-        # NUM_CLASSES = len(CLASSES)
 
-        classes_to_create = [('Одноцепная башенного типа', '#7984F1'),
-                             ('Двухцепная башенного типа', '#61C6FF'),
-                             ('Свободно стоящая типа "рюмка"', '#F179C1'),
-                             ('Портальная на оттяжках', '#79F17E'),
-                             ('Другие классы', '#FFDC61')]
+        chroma_client = chromadb.HttpClient(host=settings.CHROMA_HOST_ADDR, port=settings.CHROMA_HOST_PORT)
+        collection = chroma_client.get_or_create_collection(name=settings.CHROMA_DB_NAME)
+        all_metadatas = collection.get(include=["metadatas"]).get('metadatas')
+        classes_to_create = set([x.get("class") for x in all_metadatas])
         for object_class in classes_to_create:
             try:
-                db.add(models.image.ObjectClass(name=object_class[0],
-                                                colour=object_class[1]))
+                db.add(models.image.ObjectClass(name=object_class,
+                                                colour='#FFDC61'))
                 db.commit()
             except exc.IntegrityError:
                 logging.info(f"{object_class[0]} object class already exists in db")
