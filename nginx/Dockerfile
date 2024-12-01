@@ -50,8 +50,8 @@ RUN apk update && apk upgrade && \
 RUN addgroup -S nginx && adduser --disabled-password --ingroup nginx nginx
 WORKDIR /
 COPY --from=nginxbuild /nginx /nginx
-COPY nginx.conf /nginx/conf/nginx.conf
+COPY nginx.conf ssl.conf /nginx/conf/
 RUN mkdir /public
 RUN chown -R nginx:nginx /public && chmod -R 777 /public
 
-CMD [ "./nginx/sbin/nginx" ]
+ENTRYPOINT [ "./nginx/sbin/nginx" ]

@@ -5,9 +5,11 @@ services:
     build: nginx
     restart: always
     ports:
-      - "28088:28088"
+      - "80:80"
+      - "443:443"
     volumes:
       - ./nginx/dist:/public
+    command: ["-c","/nginx/conf/nginx.conf"]
     networks:
       - towerx
     depends_on:

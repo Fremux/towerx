@@ -1,0 +1,16 @@
+services:
+  nginx:
+    image: base-nginx
+    build: nginx
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/dist:/public
+    command: ["-c", "/nginx/conf/ssl.conf"]
+    networks:
+      - towerx
+    depends_on:
+      restapi:
+        condition: service_started
