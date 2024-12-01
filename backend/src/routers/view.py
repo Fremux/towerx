@@ -50,13 +50,14 @@ async def upload_image(files: List[UploadFile],
         else:
             validate = Validate(name=file.filename.split(".")[0])
             db.add(validate)
-            with tempfile.TemporaryDirectory(prefix="transform_") as tmp:
+            with (tempfile.TemporaryDirectory(prefix="transform_") as tmp):
+                # Extract data from archive
                 input_file = tempfile.NamedTemporaryFile(mode="wb+", suffix=f"_{file.filename}", dir=tmp)
                 input_file.write(file.file.read())
                 input_file.seek(0)
                 archive_file_path = p.join(tmp, input_file.name)
                 unarchived_files = unpack_archive(archive_file_path, tmp)
-
+                # Upload and creat tasks for files inside arhcive
                 for unarchived_file in unarchived_files:
                     if unarchived_file[0].endswith((".jpg", ".png", ".jpeg")):
                         s3_path = f"/{str(uuid4())}_{unarchived_file[0]}"
@@ -65,6 +66,21 @@ async def upload_image(files: List[UploadFile],
                         image = Image(name=unarchived_file[0],
                                       s3_path=s3_path,
                                       validate_id=validate.id)
+                        for annotation_file in unarchived_files:
+                            if (annotation_file[0].endswith(".txt")
+                                    and annotation_file[0].split(".")[0] == unarchived_file[0].split("."[0])):
+                                continue
+                                data = unarchived_file[1].readlines()
+                                true_data = []
+                                for line in data:
+                                    label, params = parse_input_file_class(line.decode("utf-8"))
+                                    labeling_data = {"x": params[0],
+                                                     "y": params[1],
+                                                     "w": params[2],
+                                                     "h": params[3],
+                                                     "label": label}
+                                    true_data.append(labeling_data)
+                                image.true_data = labeling_data
                         db.add(image)
                         db.commit()
                         message_body = {"id": image.id,
@@ -82,13 +98,18 @@ async def upload_image(files: List[UploadFile],
 async def get_all(db: Session = Depends(get_database)) -> List[GetAllImages]:
     """Get all images base info"""
     images: List[Image] = db.query(Image).order_by(Image.created_at.desc()).all()
+    result = []
+    for image in images:
+        preview_s3_url = s3_connection.get_url("preview" + image.s3_path)
+        schema = GetAllImages(id=image.id,
+                              name=image.name,
+                              status=image.status,
+                              created_at=image.created_at,
+                              object_classes=[],
+                              preview_s3_url=preview_s3_url[preview_s3_url.find(settings.AWS_BUCKET) - 1:])
+        result.append(schema)
 
-    return [GetAllImages(id=image.id,
-                         name=image.name,
-                         status=image.status,
-                         created_at=image.created_at,
-                         object_classes=[],
-                         preview_s3_url=s3_connection.get_url("original" + image.s3_path)) for image in images]
+    return result
 
 
 @router.get("/image/{image_id}/",
@@ -108,7 +129,7 @@ async def get_image_by_id(image_id: int,
                     labeling=[ImageLabeling(**labeling) for labeling in image.labeling_data]
                     if image.labeling_data is not None else [],
                     created_at=image.created_at,
-                    original_s3_url=original_s3_url[original_s3_url.find(settings.AWS_BUCKET)-1:])
+                    original_s3_url=original_s3_url[original_s3_url.find(settings.AWS_BUCKET) - 1:])
 
 
 @router.delete("/image/{image_id}/",
@@ -145,7 +166,7 @@ async def add_object_class(file: UploadFile,
                            db: Session = Depends(get_database)) -> None:
     class_names, embeddings = [], []
     for line in file.file.readlines():
-        class_name, embedding = parse_input_file_class(line)
+        class_name, embedding = parse_input_file_class(line.decode("utf-8"))
         image_name_check = db.query(ObjectClass).filter(ObjectClass.name == class_name).first()
         class_names.append(class_name)
         embeddings.append(embeddings)

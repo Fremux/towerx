@@ -101,6 +101,43 @@ services:
     networks:
       - towerx
 
+  preview:
+    image: preview
+    build: preview
+    restart: always
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      minio:
+        condition: service_started
+    env_file:
+      - .env
+    networks:
+      - towerx
+
+  # detector:
+  #   image: cpu-detector
+  #   build:
+  #     context: detector
+  #     dockerfile: Dockerfile
+  #   restart: always
+  #   depends_on:
+  #     db:
+  #       condition: service_started
+  #     rabbitmq:
+  #       condition: service_healthy
+  #     minio:
+  #       condition: service_started
+  #     chromadb:
+  #       condition: service_started
+  #     restapi:
+  #       condition: service_started
+    # env_file:
+    #   - .env
+    # entrypoint: ["python3", "main.py"]
+    # networks:
+    #   - towerx
+
 volumes:
   minio_data:
     driver: local
