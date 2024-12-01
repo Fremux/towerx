@@ -22,8 +22,6 @@ async def main(loop):
             try:
                 task = PreviewTask.model_validate_json(message.body.decode())
                 logger.info(f"Start process {task}")
-                file = BytesIO()
-                s3.download_file(file, "/preview" + task.s3)
                 create_preview_image(task.s3)
                 logger.info("Finished")
             except ValueError as e:
