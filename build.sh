@@ -1,3 +1,4 @@
 #!/usr/bin/bash
 
-cd frontend; yarn install && yarn build; cd ..; rm -rf nginx/dist; cp -r frontend/dist nginx/dist
+docker build --output=nginx/dist frontend
+docker compose -f docker-compose.yml -f docker-compose.ssl.yml up --build
