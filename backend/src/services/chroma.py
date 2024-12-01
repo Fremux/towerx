@@ -1,10 +1,32 @@
 import chromadb
+import errors
+import logging
 from settings import settings
-from typing import List
+from typing import List, Tuple
+
+#chroma_client = None
+chroma_client = chromadb.HttpClient(host=settings.CHROMADB_URL, port=settings.CHROMADB_PORT)
 
 
-def delete_from_chroma(cls: int) -> None:
-    chroma_client = chromadb.HttpClient(host=settings.CHROMADB_URL, port=settings.CHROMADB_PORT)
+def parse_input_file_class(line: bytes) -> Tuple[str, List[float]]:
+    line = line.decode("utf-8")
+    start_quote = line.find('"')
+    end_quote = line.find('"', start_quote + 1)
+    if start_quote == -1 or end_quote == -1:
+        logging.error("Can't parse object class name")
+        raise errors.unable_to_process_file()
+    class_name = line[start_quote + 1:end_quote]
+    try:
+        logging.error(line[end_quote + 1:])
+        embedding = list(map(float, line[end_quote + 1:].split()))
+    except Exception as e:
+        logging.error(f"Can't process embedding for class {class_name}")
+        logging.error(e)
+        raise errors.unable_to_process_file()
+    return class_name, embedding
+
+
+def delete_from_chroma(cls: str) -> None:
     collection = chroma_client.get_or_create_collection(name=settings.CHROMADB_NAME)
     result = collection.fetch(where={"class": cls})
 
@@ -14,12 +36,11 @@ def delete_from_chroma(cls: int) -> None:
         collection.delete(ids=ids_to_delete)
 
 
-def insert_to_chroma(cls: int,
-                     input_data: List[float]) -> None:
-    chroma_client = chromadb.HttpClient(host=settings.CHROMADB_URL, port=settings.CHROMADB_PORT)
+def insert_class_to_chroma(cls: List[str],
+                           input_data: List[List[float]]) -> None:
     collection = chroma_client.get_or_create_collection(name=settings.CHROMADB_NAME)
     collection.add(
-        ids=[cls],
-        embeddings=[input_data],
-        metadatas=["class"]
+        ids=cls,
+        embeddings=input_data,
+        metadatas=["class"] * len(cls)
     )

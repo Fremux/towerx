@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import APIRouter, Depends, UploadFile
 from uuid import uuid4
 from typing import List
@@ -5,7 +7,7 @@ from db import get_database, Session
 from models.image import Image, ObjectClass, Validate
 from schemas.view import GetImage, GetAllImages, ImageLabeling, GetObjectClass
 from services.archive import unpack_archive
-from services.chroma import delete_from_chroma
+from services.chroma import delete_from_chroma, insert_class_to_chroma, parse_input_file_class
 from s3 import s3_connection
 from rabbitmq import rabbit_connection
 from aio_pika import Message, DeliveryMode
@@ -46,6 +48,8 @@ async def upload_image(files: List[UploadFile],
                               delivery_mode=DeliveryMode.PERSISTENT)
             await rabbit_connection.exchange.publish(message, "analyse")
         else:
+            validate = Validate()
+            db.add(validate)
             with tempfile.TemporaryDirectory(prefix="transform_") as tmp:
                 input_file = tempfile.NamedTemporaryFile(mode="wb+", suffix=f"_{file.filename}", dir=tmp)
                 input_file.write(file.file.read())
@@ -59,7 +63,8 @@ async def upload_image(files: List[UploadFile],
                         s3_connection.upload_file(unarchived_file[1].read(), original_s3_path)
                         unarchived_file[1].close()
                         image = Image(name=unarchived_file[0],
-                                      original_s3_path=original_s3_path)
+                                      original_s3_path=original_s3_path,
+                                      validate_id=validate.id)
                         db.add(image)
                         db.commit()
                         message_body = {"id": image.id,
@@ -136,12 +141,23 @@ async def get_all_object_classes(db: Session = Depends(get_database)) -> List[Ge
 
 @router.post("/class/create",
              status_code=201,
-             responses=errors.with_errors())
-async def add_object_class(new_object_class: str,
+             responses=errors.with_errors(errors.object_class_already_exists()))
+async def add_object_class(file: UploadFile,
                            db: Session = Depends(get_database)) -> None:
-    # Later can be added check for unique object class name
-    db.add(ObjectClass(name=new_object_class))
+    class_names, embeddings = [], []
+    for line in file.file.readlines():
+        class_name, embedding = parse_input_file_class(line)
+        image_name_check = db.query(ObjectClass).filter(ObjectClass.name == class_name).first()
+        class_names.append(class_name)
+        embeddings.append(embeddings)
+        if image_name_check is None:
+            db.add(ObjectClass(name=class_name))
+            db.flush()
+        else:
+            db.rollback()
+            raise errors.object_class_already_exists()
     db.commit()
+    insert_class_to_chroma(class_names, embeddings)
 
 
 @router.delete("/class/delete",

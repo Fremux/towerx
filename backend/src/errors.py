@@ -44,3 +44,8 @@ def object_class_not_found():
 def unable_to_process_file():
     return HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE,
                          detail="Cannot process one or many files!")
+
+
+def object_class_already_exists():
+    return HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE,
+                         detail="Object class already exists!")
