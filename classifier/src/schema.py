@@ -26,7 +26,7 @@ class ValidationStatistics(BaseModel):
     map_base: float
     map_50: float
     map_75: float
-    map_msall: float
+    map_small: float
     mar_1: float
     mar_10: float
     mar_100: float
