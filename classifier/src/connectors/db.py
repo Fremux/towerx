@@ -35,11 +35,11 @@ def _custom_json_dumps(obj, **kwargs):
 engine = create_engine(
     "{}://{}:{}@{}:{}/{}".format(
         "postgresql",
-        settings.POSTGRES_USER,
-        settings.POSTGRES_PASSWORD,
-        settings.POSTGRES_ADDR,
-        settings.POSTGRES_PORT,
-        settings.POSTGRES_DB,
+        settings.DB_USERNAME,
+        settings.DB_PASSWORD,
+        settings.DB_ADDR,
+        settings.DB_PORT,
+        settings.DB_NAME,
     ), json_serializer=_custom_json_dumps, pool_size=10, pool_timeout=3
 )
 

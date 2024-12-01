@@ -27,7 +27,7 @@ def parse_input_file_class(line: bytes) -> Tuple[str, List[float]]:
 
 def delete_from_chroma(cls: str) -> None:
     collection = chroma_client.get_or_create_collection(name=settings.CHROMA_DB_NAME)
-    result = collection.fetch(where={"class": cls})
+    result = collection.get(where={"class": cls})
 
     ids_to_delete = result.get("ids", [])
 
