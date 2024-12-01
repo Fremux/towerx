@@ -1,3 +1,4 @@
 */g/
 *.pt
 .env
+nginx/dist/
