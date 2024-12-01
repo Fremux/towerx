@@ -106,7 +106,7 @@ async def get_all(db: Session = Depends(get_database)) -> List[GetAllImages]:
                               status=image.status,
                               created_at=image.created_at,
                               object_classes=[],
-                              preview_s3_url=preview_s3_url[preview_s3_url.find(settings.AWS_BUCKET) - 1:])
+                              preview_s3_url=preview_s3_url[preview_s3_url.find(settings.AWS_BUCKET) - 1:] if preview_s3_url is not None else None)
         result.append(schema)
 
     return result
