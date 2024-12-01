@@ -10,6 +10,7 @@ MODEL = 0
 models = json.load(str(WEIGHTS_DIR / "weights.json"))
 model_c = models[MODEL]
 
+(WEIGHTS_DIR / model_c["name"]).is_file()
 #settings.WEIGHTS_DIR/weights.json
 model = YOLO("path/to/best.pt")  # load a custom model
 
