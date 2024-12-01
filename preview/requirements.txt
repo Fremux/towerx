@@ -1,3 +1,5 @@
 aio-pika
+pillow
 pydantic
 pydantic-settings
+boto3
