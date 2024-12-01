@@ -22,3 +22,16 @@ class ClassifierResult(BaseModel):
     labels: list[BBoxResult]
 
 
+class ValidationStatistics(BaseModel):
+    map_base: float
+    map_50: float
+    map_75: float
+    map_msall: float
+    mar_1: float
+    mar_10: float
+    mar_100: float
+    mar_small: float
+    multiclass_accuracy: float
+    multiclass_f1_score: float
+    multiclass_precision: float
+    multiclass_recall: float
