@@ -8,6 +8,7 @@ services:
       - "443:443"
     volumes:
       - ./nginx/dist:/public
+      - ./nginx/ssl:/etc/ssl
     command: ["-c", "/nginx/conf/ssl.conf"]
     networks:
       - towerx
