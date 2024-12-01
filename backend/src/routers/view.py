@@ -1,11 +1,9 @@
-import logging
-
 from fastapi import APIRouter, Depends, UploadFile
 from uuid import uuid4
 from typing import List
 from db import get_database, Session
-from models.image import Image
-from schemas.view import GetImage, GetAllImages, ImageLabeling
+from models.image import Image, ObjectClass, Validate
+from schemas.view import GetImage, GetAllImages, ImageLabeling, GetObjectClass
 from services.archive import unpack_archive
 from s3 import s3_connection
 from rabbitmq import rabbit_connection
@@ -20,6 +18,7 @@ router = APIRouter()
 
 SUPPORTED_FILE_TYPES = ["image/jpeg", "image/png", "image/jpg"]
 SUPPORTED_ARCHIVE_TYPES = ["application/x-zip-compressed", "application/x-compressed"]
+SUPPORTED_TXT_FILES = []
 
 
 @router.post("/image/upload",
@@ -52,8 +51,7 @@ async def upload_image(files: List[UploadFile],
                 input_file.seek(0)
                 archive_file_path = p.join(tmp, input_file.name)
                 unarchived_files = unpack_archive(archive_file_path, tmp)
-                logging.error(unarchived_files)
-                logging.error(type(unarchived_files))
+
                 for unarchived_file in unarchived_files:
                     if unarchived_file[0].endswith((".jpg", ".png", ".jpeg")):
                         original_s3_path = f"original/{str(uuid4())}_{unarchived_file[0]}"
@@ -123,4 +121,35 @@ async def delete_image(image_id: int,
         s3_connection.delete_file(image.preview_s3_path)
 
     db.delete(image)
+    db.commit()
+
+
+@router.get("/class/all",
+            response_model=List[GetObjectClass],
+            responses=errors.with_errors())
+async def get_all_object_classes(db: Session = Depends(get_database)) -> List[GetObjectClass]:
+    object_classes = db.query(ObjectClass).all()
+    return [GetObjectClass(id=object_class.id,
+                           name=object_class.name) for object_class in object_classes]
+
+
+@router.post("/class/create",
+             status_code=201,
+             responses=errors.with_errors())
+async def add_object_class(new_object_class: str,
+                           db: Session = Depends(get_database)) -> None:
+    # Later can be added check for unique object class name
+    db.add(ObjectClass(name=new_object_class))
+    db.commit()
+
+
+@router.delete("/class/delete",
+               status_code=204,
+               responses=errors.with_errors(errors.object_class_not_found()))
+async def delete_object_class(object_class_id: int,
+                              db: Session = Depends(get_database)) -> None:
+    object_class = db.query(ObjectClass).filter(ObjectClass.id == object_class_id).first()
+    if object_class is None:
+        raise errors.object_class_not_found()
+    db.delete(object_class)
     db.commit()

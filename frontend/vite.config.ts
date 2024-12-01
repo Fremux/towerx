@@ -10,9 +10,12 @@ export default defineConfig({
     open: 'http://localhost:5173/',
     proxy: {
       '/api/v1': {
-        target: 'http://93.182.50.84:28080/api/v1',
+        target: 'http://93.182.50.84:28088/api/v1',
+      },
+      '/fic-data': {
+        target: 'http://93.182.50.84:28088/fic-data',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api\/v1/, ''),
+        rewrite: (path) => path.replace(/^\/fic-data/, ''),
       },
     },
   },

@@ -29,3 +29,8 @@ class GetImage(BaseModel):
     status: EnumImageStatus
     labeling: List[ImageLabeling]
     created_at: datetime
+
+
+class GetObjectClass(BaseModel):
+    id: int
+    name: str

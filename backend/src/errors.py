@@ -36,6 +36,11 @@ def image_not_found():
                          detail="Image not found!")
 
 
+def object_class_not_found():
+    return HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                         detail="Object class not found!")
+
+
 def unable_to_process_file():
     return HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE,
                          detail="Cannot process one or many files!")
