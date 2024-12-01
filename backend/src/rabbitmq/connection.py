@@ -49,10 +49,12 @@ class RabbitConnection:
         )
         self.channel = await self.connection.channel(publisher_confirms=False)
         logging.info("Connected to RabbitMQ")
-        self.exchange = await rabbit_connection.channel.declare_exchange("connect", type=ExchangeType.FANOUT)
+        self.exchange = await rabbit_connection.channel.declare_exchange("image", type=ExchangeType.FANOUT)
         logging.info(self.exchange)
-        queue = await rabbit_connection.channel.declare_queue("connect", durable=True)
+        queue = await rabbit_connection.channel.declare_queue("detector", durable=True)
+        queue2 = await rabbit_connection.channel.declare_queue("preview", durable=True)
         await queue.bind(rabbit_connection.exchange)
+        await queue2.bind(rabbit_connection.exchange)
 
     async def disconnect(self) -> None:
         """

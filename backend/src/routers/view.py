@@ -46,7 +46,7 @@ async def upload_image(files: List[UploadFile],
                               content_type="application/json",
                               content_encoding="utf-8",
                               delivery_mode=DeliveryMode.PERSISTENT)
-            await rabbit_connection.exchange.publish(message, "analyse")
+            await rabbit_connection.exchange.publish(message, "")
         else:
             validate = Validate(name=file.filename.split(".")[0])
             db.add(validate)
@@ -73,7 +73,7 @@ async def upload_image(files: List[UploadFile],
                                           content_type="application/json",
                                           content_encoding="utf-8",
                                           delivery_mode=DeliveryMode.PERSISTENT)
-                        await rabbit_connection.exchange.publish(message, "analyse")
+                        await rabbit_connection.exchange.publish(message, "")
 
 
 @router.get("/image/all",
