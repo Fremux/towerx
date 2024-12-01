@@ -8,7 +8,7 @@ from connectors.rabbitmq import rabbitmq
 from connectors.db import with_database
 from connectors.s3 import s3
 from schema import DetectorTask, ClassifierTask
-from detect import detect
+from classifier import classify
 
 logger = logging.getLogger()
 logger.addHandler(logging.StreamHandler())
@@ -29,7 +29,7 @@ async def main(loop):
                     s3.download_file(file,task.s3)
                     result = classify(task)
                     logger.info(f"Result {result=}")
-                    
+
                 except ValueError as e:
                     logger.error(f"Cant parse ConnectorTask with error: {e}")
                 await message.ack()

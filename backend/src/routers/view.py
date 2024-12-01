@@ -5,7 +5,7 @@ from uuid import uuid4
 from typing import List
 from db import get_database, Session
 from models.image import Image, ObjectClass, Validate
-from schemas.view import GetImage, GetAllImages, ImageLabeling, GetObjectClass
+from schemas.view import GetImage, GetAllImages, ImageLabeling, GetObjectClass, GetValidationData, ValidationMetrics
 from services.archive import unpack_archive
 from services.chroma import delete_from_chroma, insert_class_to_chroma, parse_input_file_class
 from s3 import s3_connection
@@ -33,22 +33,22 @@ async def upload_image(files: List[UploadFile],
     if any(file.content_type not in SUPPORTED_FILE_TYPES + SUPPORTED_ARCHIVE_TYPES for file in files):
         raise errors.unsupported_file_format()
     for file in files:
-        if file.content_type in ["image/jpeg", "image/png", "image/jpg"]:
-            original_s3_path = f"original/{str(uuid4())}_{file.filename}"
-            s3_connection.upload_file(file.file.read(), original_s3_path)
+        if file.content_type in SUPPORTED_FILE_TYPES:
+            s3_path = f"/{str(uuid4())}_{file.filename}"
+            s3_connection.upload_file(file.file.read(), "original" + s3_path)
             image = Image(name=file.filename,
-                          original_s3_path=original_s3_path)
+                          s3_path=s3_path)
             db.add(image)
             db.commit()
             message_body = {"id": image.id,
-                            "s3_path": original_s3_path}
+                            "s3_path": s3_path}
             message = Message(body=json.dumps(message_body).encode(),
                               content_type="application/json",
                               content_encoding="utf-8",
                               delivery_mode=DeliveryMode.PERSISTENT)
             await rabbit_connection.exchange.publish(message, "analyse")
         else:
-            validate = Validate()
+            validate = Validate(name=file.filename.split(".")[0])
             db.add(validate)
             with tempfile.TemporaryDirectory(prefix="transform_") as tmp:
                 input_file = tempfile.NamedTemporaryFile(mode="wb+", suffix=f"_{file.filename}", dir=tmp)
@@ -60,7 +60,7 @@ async def upload_image(files: List[UploadFile],
                 for unarchived_file in unarchived_files:
                     if unarchived_file[0].endswith((".jpg", ".png", ".jpeg")):
                         s3_path = f"/{str(uuid4())}_{unarchived_file[0]}"
-                        s3_connection.upload_file(unarchived_file[1].read(), "original" + original_s3_path)
+                        s3_connection.upload_file(unarchived_file[1].read(), "original" + s3_path)
                         unarchived_file[1].close()
                         image = Image(name=unarchived_file[0],
                                       s3_path=s3_path,
@@ -68,7 +68,7 @@ async def upload_image(files: List[UploadFile],
                         db.add(image)
                         db.commit()
                         message_body = {"id": image.id,
-                                        "s3_path": original_s3_path}
+                                        "s3_path": s3_path}
                         message = Message(body=json.dumps(message_body).encode(),
                                           content_type="application/json",
                                           content_encoding="utf-8",
@@ -170,3 +170,27 @@ async def delete_object_class(object_class_id: int,
     db.delete(object_class)
     db.commit()
     delete_from_chroma(object_class_id)
+
+
+@router.get("/validation/all",
+            response_model=List[GetValidationData])
+async def get_all_validations(db: Session = Depends(get_database)) -> List[GetValidationData]:
+    """Get information about batch upload"""
+    validations = db.query(Validate).order_by(Validate.date.desc()).all()
+    return [GetValidationData(id=validation.id,
+                              name=validation.name,
+                              created_at=validation.date,
+                              is_finished=validation.is_finished,
+                              metrics=ValidationMetrics(map_base=validation.map_base,
+                                                        map_50=validation.map_50,
+                                                        map_75=validation.map_75,
+                                                        map_msall=validation.map_msall,
+                                                        mar_1=validation.mar_1,
+                                                        mar_10=validation.mar_10,
+                                                        mar_100=validation.mar_100,
+                                                        mar_small=validation.mar_small,
+                                                        multiclass_accuracy=validation.multiclass_accuracy,
+                                                        multiclass_f1_score=validation.multiclass_f1_score,
+                                                        multiclass_precision=validation.multiclass_precision,
+                                                        multiclass_recall=validation.multiclass_recall))
+            for validation in validations]

@@ -34,3 +34,26 @@ class GetImage(BaseModel):
 class GetObjectClass(BaseModel):
     id: int
     name: str
+
+
+class ValidationMetrics(BaseModel):
+    map_base: float
+    map_50: float
+    map_75: float
+    map_msall: float
+    mar_1: float
+    mar_10: float
+    mar_100: float
+    mar_small: float
+    multiclass_accuracy: float
+    multiclass_f1_score: float
+    multiclass_precision: float
+    multiclass_recall: float
+
+
+class GetValidationData(BaseModel):
+    id: int
+    name: str
+    created_at: datetime
+    is_finished: bool
+    metrics: ValidationMetrics

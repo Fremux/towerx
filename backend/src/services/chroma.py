@@ -4,6 +4,7 @@ import logging
 from settings import settings
 from typing import List, Tuple
 
+
 chroma_client = chromadb.HttpClient(host=settings.CHROMA_HOST_ADDR, port=settings.CHROMA_HOST_PORT)
 
 

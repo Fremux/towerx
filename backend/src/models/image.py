@@ -24,9 +24,22 @@ class Image(Base):
 class Validate(Base):
     __tablename__ = "validate"
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    name: Mapped[str] = mapped_column(nullable=True)
     date: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), nullable=False,
-                                           server_default=func.current_timestamp())
+                                                 server_default=func.current_timestamp())
     is_finished: Mapped[bool] = mapped_column(server_default="False")
+    map_base: Mapped[float] = mapped_column(server_default="0")
+    map_50: Mapped[float] = mapped_column(server_default="0")
+    map_75: Mapped[float] = mapped_column(server_default="0")
+    map_msall: Mapped[float] = mapped_column(server_default="0")
+    mar_1: Mapped[float] = mapped_column(server_default="0")
+    mar_10: Mapped[float] = mapped_column(server_default="0")
+    mar_100: Mapped[float] = mapped_column(server_default="0")
+    mar_small: Mapped[float] = mapped_column(server_default="0")
+    multiclass_accuracy: Mapped[float] = mapped_column(server_default="0")
+    multiclass_f1_score: Mapped[float] = mapped_column(server_default="0")
+    multiclass_precision: Mapped[float] = mapped_column(server_default="0")
+    multiclass_recall: Mapped[float] = mapped_column(server_default="0")
 
 
 class ObjectClass(Base):
