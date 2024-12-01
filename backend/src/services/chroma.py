@@ -26,7 +26,7 @@ def parse_input_file_class(line: bytes) -> Tuple[str, List[float]]:
 
 
 def delete_from_chroma(cls: str) -> None:
-    collection = chroma_client.get_or_create_collection(name=settings.CHROMADB_NAME)
+    collection = chroma_client.get_or_create_collection(name=settings.CHROMA_DB_NAME)
     result = collection.fetch(where={"class": cls})
 
     ids_to_delete = result.get("ids", [])
@@ -37,7 +37,7 @@ def delete_from_chroma(cls: str) -> None:
 
 def insert_class_to_chroma(cls: List[str],
                            input_data: List[List[float]]) -> None:
-    collection = chroma_client.get_or_create_collection(name=settings.CHROMADB_NAME)
+    collection = chroma_client.get_or_create_collection(name=settings.CHROMA_DB_NAME)
     collection.add(
         ids=cls,
         embeddings=input_data,
